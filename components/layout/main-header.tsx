@@ -12,6 +12,13 @@ const MobileMenu = dynamic(() => import('../header/mobile-menu'), {
   ),
 });
 
+const SearchDialog = dynamic(() => import('../header/search-dialog'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-8 w-8 sm:h-10 sm:w-10 animate-pulse bg-gray-200 rounded-full" />
+  ),
+});
+
 const MainHeader = () => {
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -40,7 +47,7 @@ const MainHeader = () => {
 
             {/* actions */}
             <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 min-w-fit ">
-              
+              <SearchDialog />
             </div>
           </div>
         </div>

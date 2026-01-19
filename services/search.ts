@@ -10,6 +10,7 @@ export class SearchService {
    */
   static async search(params: SearchParams): Promise<SearchData> {
     if (!params.q || params.q.length < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return {
         courses: [],
         blogs: [],
@@ -18,6 +19,18 @@ export class SearchService {
 
     // add logic api here
 
-    return { courses: [], blogs: [] };
+    // fake delay response ~1000ms
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return { courses: [{
+      _id: '12',
+      title: 'JavaScript',
+      slug: 'javascript',
+      image: ''
+    }], blogs: [{
+      _id: '12',
+      title: 'JavaScript',
+      slug: 'javascript',
+      thumbnail: ''
+    }] };
   }
 }
