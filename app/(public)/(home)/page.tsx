@@ -1,4 +1,5 @@
 import { generateHomePageMetadata } from '@/components/seo/page-seo';
+import HeroSection from './components/hero-section';
 
 // Generate Home Page Metadata
 export const metadata = generateHomePageMetadata();
@@ -16,7 +17,11 @@ const HomePage = async () => {
   // fetch data from server side here
   const { courses, blogs } = await fetchDataHomePageData();
 
-  return <div>Home page</div>;
+  return (
+    <>
+      <HeroSection />
+    </>
+  );
 };
 
 export default HomePage;
