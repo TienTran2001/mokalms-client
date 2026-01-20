@@ -1,58 +1,71 @@
-import { Button } from "@/components/ui/button"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { getRoutes, ROUTE_CONFIG } from "@/configs/routes"
-import { useSearch } from "@/hooks/use-search"
-import { Search } from "lucide-react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { getRoutes, ROUTE_CONFIG } from '@/configs/routes';
+import { useSearch } from '@/hooks/use-search';
+import { Search } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const SearchDialog = () => {
-  const [open, setOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const router = useRouter()
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
 
   const {
     data: searchData,
     isLoading: searchLoading,
     isFetching: searchFetching,
     isError: searchError,
-  } = useSearch(searchQuery)
+  } = useSearch(searchQuery);
 
-  const courses = searchData?.courses || []
-  const blogs = searchData?.blogs || []
+  const courses = searchData?.courses || [];
+  const blogs = searchData?.blogs || [];
 
   // handle search submission
   const handleSearchSubmit = (query: string) => {
     if (query.trim()) {
-      setOpen(true)
-      setSearchQuery("")
-      router.push(getRoutes.searchWithQuery(query.trim()))
+      setOpen(true);
+      setSearchQuery('');
+      router.push(getRoutes.searchWithQuery(query.trim()));
     }
-  }
+  };
 
   // handle more
   const handleViewMore = (type: 'course' | 'blog') => {
     setOpen(false);
     setSearchQuery('');
     if (type === 'course') {
-      router.push(ROUTE_CONFIG.COURSES)
+      router.push(ROUTE_CONFIG.COURSES);
     } else {
-      router.push(ROUTE_CONFIG.BLOGS)
+      router.push(ROUTE_CONFIG.BLOGS);
     }
-  }
+  };
 
   // handle item selection
   const handleItemSelect = (type: 'course' | 'blog', slug: string) => {
-    setOpen(false)
-    setSearchQuery('')
+    setOpen(false);
+    setSearchQuery('');
     if (type === 'course') {
-      router.push(getRoutes.courseDetail(slug))
+      router.push(getRoutes.courseDetail(slug));
     } else {
-      router.push(getRoutes.blogDetail(slug))
+      router.push(getRoutes.blogDetail(slug));
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -85,20 +98,18 @@ const SearchDialog = () => {
               className="h-10 sm:h-12 text-base"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  handleSearchSubmit(searchQuery)
+                  handleSearchSubmit(searchQuery);
                 }
               }}
             />
             <CommandList className="max-h-72 sm:max-h-96">
               {/* search loading */}
-              {
-                (searchLoading || searchFetching) && searchQuery.length >= 2 && (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-2 text-gray-600">Searching...</span>
-                  </div>
-                )
-              }
+              {(searchLoading || searchFetching) && searchQuery.length >= 2 && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Searching...</span>
+                </div>
+              )}
 
               {/* search error */}
               {searchError && searchQuery.length >= 2 && (
@@ -117,8 +128,9 @@ const SearchDialog = () => {
               {!searchLoading &&
                 !searchFetching &&
                 !searchError &&
-                searchQuery.length >= 2 && courses.length === 0 && blogs.length === 0
-                && (
+                searchQuery.length >= 2 &&
+                courses.length === 0 &&
+                blogs.length === 0 && (
                   <CommandEmpty>
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <Search className="h-12 w-12 text-muted-foreground mb-3" />
@@ -135,8 +147,7 @@ const SearchDialog = () => {
                       </button>
                     </div>
                   </CommandEmpty>
-                )
-              }
+                )}
 
               {/* when search query length < 2 */}
               {searchQuery.length < 2 && (
@@ -152,55 +163,53 @@ const SearchDialog = () => {
               )}
 
               {/* courses group */}
-              {
-                !searchLoading && !searchFetching && courses.length > 0 && (
-                  <CommandGroup>
-                    <div className="flex items-center justify-between px-2 mb-2 py-3 sm:py-4 border-b">
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-                        COURSES
-                      </h3>
-                      <button
-                        onClick={() => handleViewMore("course")}
-                        className="text-sm text-gray-500 hover:text-blue-600 transition-colors min-h-[44px] px-2"
-                        aria-label="View more courses"
-                      >
-                        View more
-                      </button>
-                    </div>
-                    {courses.slice(0, 3).map((course) => (
-                      <CommandItem
-                        key={course._id}
-                        value={course.title}
-                        onSelect={() => handleItemSelect("course", course.slug)}
-                        className="flex items-center gap-3 p-3 sm:p-2 hover:bg-gray-50 cursor-pointer border-none min-h-[60px] sm:min-h-[auto]"
-                      >
-                        <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0">
-                          {course?.image ? (
-                            <Image
-                              src={course.image}
-                              alt={course?.title || "Course"}
-                              fill
-                              className="object-cover"
-                              sizes="48px"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-white text-lg font-semibold">
-                                {course.title?.charAt(0)?.toUpperCase() || "C"}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-900 truncate">
-                            {course?.title}
+              {!searchLoading && !searchFetching && courses.length > 0 && (
+                <CommandGroup>
+                  <div className="flex items-center justify-between px-2 mb-2 py-3 sm:py-4 border-b">
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+                      COURSES
+                    </h3>
+                    <button
+                      onClick={() => handleViewMore('course')}
+                      className="text-sm text-gray-500 hover:text-blue-600 transition-colors min-h-[44px] px-2"
+                      aria-label="View more courses"
+                    >
+                      View more
+                    </button>
+                  </div>
+                  {courses.slice(0, 3).map((course) => (
+                    <CommandItem
+                      key={course._id}
+                      value={course.title}
+                      onSelect={() => handleItemSelect('course', course.slug)}
+                      className="flex items-center gap-3 p-3 sm:p-2 hover:bg-gray-50 cursor-pointer border-none min-h-[60px] sm:min-h-[auto]"
+                    >
+                      <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0">
+                        {course?.image ? (
+                          <Image
+                            src={course.image}
+                            alt={course?.title || 'Course'}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <span className="text-white text-lg font-semibold">
+                              {course.title?.charAt(0)?.toUpperCase() || 'C'}
+                            </span>
                           </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {course?.title}
                         </div>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                )
-              }
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
 
               {/* blogs group */}
               {!searchLoading && !searchFetching && blogs.length > 0 && (
@@ -210,7 +219,7 @@ const SearchDialog = () => {
                       TUTORIALS
                     </h3>
                     <button
-                      onClick={() => handleViewMore("blog")}
+                      onClick={() => handleViewMore('blog')}
                       className="text-sm text-gray-500 hover:text-blue-600 transition-colors min-h-[44px] px-2"
                       aria-label="View more blog posts"
                     >
@@ -221,14 +230,14 @@ const SearchDialog = () => {
                     <CommandItem
                       key={blog._id}
                       value={blog.title}
-                      onSelect={() => handleItemSelect("blog", blog.slug)}
+                      onSelect={() => handleItemSelect('blog', blog.slug)}
                       className="flex items-center gap-3 p-3 sm:p-4 hover:bg-gray-50 cursor-pointer border-none min-h-[60px] sm:min-h-[auto]"
                     >
                       <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-pink-500 to-orange-400 flex-shrink-0">
                         {blog?.thumbnail ? (
                           <Image
                             src={blog.thumbnail}
-                            alt={blog?.title || "Blog"}
+                            alt={blog?.title || 'Blog'}
                             fill
                             className="object-cover"
                             sizes="48px"
@@ -236,7 +245,7 @@ const SearchDialog = () => {
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <span className="text-white text-lg font-semibold">
-                              {blog.title?.charAt(0)?.toUpperCase() || "B"}
+                              {blog.title?.charAt(0)?.toUpperCase() || 'B'}
                             </span>
                           </div>
                         )}
@@ -255,7 +264,7 @@ const SearchDialog = () => {
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default SearchDialog
+export default SearchDialog;
