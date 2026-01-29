@@ -1,6 +1,19 @@
+export interface ICourse {
+  _id: string;
+  title: string;
+  slug: string;
+  image?: string;
+}
+export interface IBlog {
+  _id: string;
+  title: string;
+  slug: string;
+  thumbnail?: string;
+}
+
 export interface SearchData {
-  courses: unknown[];
-  blogs: unknown[];
+  courses: ICourse[];
+  blogs: IBlog[];
 }
 
 export interface SearchParams {

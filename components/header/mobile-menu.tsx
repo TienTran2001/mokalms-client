@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { Menu } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { GiGraduateCap } from 'react-icons/gi';
 
 const navigation = [

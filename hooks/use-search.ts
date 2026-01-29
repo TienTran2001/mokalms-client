@@ -1,6 +1,6 @@
+import { SearchService } from '@/services/search';
 import { useQuery } from '@tanstack/react-query';
 import useDebounce from './use-debounce';
-import { SearchService } from '@/services/search';
 
 // query key for search
 export const searchKeys = {
@@ -17,7 +17,7 @@ interface UseSearchOptions {
 
 // Hook for basic search with debouncing
 export const useSearch = (query: string, options: UseSearchOptions = {}) => {
-  const { debounceDelay = 300, minQueryLength = 2, enable = true } = options;
+  const { debounceDelay = 500, minQueryLength = 2, enable = true } = options;
   const debounceQuery = useDebounce(query, debounceDelay); // not spamming the api
 
   return useQuery({
