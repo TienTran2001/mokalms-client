@@ -93,12 +93,8 @@ const HeroSection = () => {
                   className="relative text-sm sm:text-base px-6 sm:px-8 h-12 sm:h-14 text-gray-700 hover:text-blue-600 transition-all duration-300 group hover:bg-gradient-to-br hover:from-blue-50 hover:via-blue-100/50 hover:to-purple-50 hover:shadow-xl hover:shadow-blue-200/25 rounded-xl font-semibold border-2 border-gray-200 hover:border-blue-300 overflow-hidden w-full sm:flex-1"
                   asChild
                 >
-                  <Link
-                    href="https://www.youtube.com/watch?v=B1UvPId3hxY"
-                    target="_blank"
-                  >
+                  <Link href={ROUTE_CONFIG.DEMO} target="_blank">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 to-purple-500/0 group-hover:from-blue-500/5 group-hover:to-purple-500/5 rounded-xl transition-all duration-300"></div>
-                    {/* <SlSocialYoutube className="mr-2 h-4 w-4 sm:h-5 sm:w-5 relative z-10 group-hover:scale-110 transition-transform duration-300 fill-current" /> */}
                     <span className="relative z-10 group-hover:scale-105 transition-transform duration-300">
                       Watch Demo
                     </span>
