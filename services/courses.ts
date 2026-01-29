@@ -6,7 +6,7 @@ import {
   PublicCoursesListResponse,
 } from '@/types/course';
 
-const ENDPOINT = {
+const ENDPOINTS = {
   COURSES: '/courses',
   PUBLIC_COURSES: '/courses/public',
 } as const;
@@ -18,7 +18,7 @@ export class CoursesService {
   ): Promise<PublicCoursesListResponse> {
     try {
       // return await ApiService.get<PublicCoursesListResponse>(
-      //   ENDPOINT.PUBLIC_COURSES,
+      //   ENDPOINTS.PUBLIC_COURSES,
       //   params as Record<string, unknown>
       // )
 
