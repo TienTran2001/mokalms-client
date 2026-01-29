@@ -1,5 +1,4 @@
 'use client';
-
 import dynamic from 'next/dynamic';
 import DesktopNavigation from '../header/desktop-navigation';
 import HeaderLogo from '../header/header-logo';
@@ -16,6 +15,23 @@ const SearchDialog = dynamic(() => import('../header/search-dialog'), {
   ssr: false,
   loading: () => (
     <div className="h-8 w-8 sm:h-10 sm:w-10 animate-pulse bg-gray-200 rounded-full" />
+  ),
+});
+
+const CartTooltip = dynamic(() => import('../header/cart-tooltip'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-8 w-8 sm:h-10 sm:w-10 animate-pulse bg-gray-200 rounded-full" />
+  ),
+});
+
+const AuthSession = dynamic(() => import('../header/auth-session'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center gap-1 sm:gap-2">
+      <div className="h-8 sm:h-10 w-16 sm:w-20 animate-pulse bg-gray-200 rounded-xl" />
+      <div className="h-8 sm:h-10 w-20 sm:w-28 animate-pulse bg-gray-200 rounded-xl" />
+    </div>
   ),
 });
 
@@ -48,6 +64,8 @@ const MainHeader = () => {
             {/* actions */}
             <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 min-w-fit ">
               <SearchDialog />
+              <CartTooltip />
+              <AuthSession />
             </div>
           </div>
         </div>
