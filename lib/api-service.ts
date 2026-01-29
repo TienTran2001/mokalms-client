@@ -33,7 +33,7 @@ export class ApiService {
   // GET request
   static async get<T>(
     url: string,
-    params: Record<string, unknown>
+    params?: Record<string, unknown>
   ): Promise<T> {
     try {
       const response: AxiosResponse<ApiResponse<T>> = await apiClient.get(url, {
