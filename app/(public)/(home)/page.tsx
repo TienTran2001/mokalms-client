@@ -1,5 +1,7 @@
+import BlogSection from '@/app/(public)/(home)/components/blog-section';
 import FeaturedCoursesSection from '@/app/(public)/(home)/components/featured-courses-section';
 import { generateHomePageMetadata } from '@/components/seo/page-seo';
+import { BlogsService } from '@/services/blog';
 import CoursesService from '@/services/courses';
 import HeroSection from './components/hero-section';
 
@@ -8,12 +10,13 @@ export const metadata = generateHomePageMetadata();
 
 // server side data fetching
 async function fetchDataHomePageData() {
-  const [coursesData] = await Promise.all([
+  const [coursesData, blogsData] = await Promise.all([
     CoursesService.getPublicCourses({ limit: 6 }),
+    BlogsService.getPublishedBlogs({ limit: 4, page: 1 }),
   ]);
   return {
     courses: coursesData,
-    blogs: [],
+    blogs: blogsData,
   };
 }
 
@@ -25,6 +28,7 @@ const HomePage = async () => {
     <>
       <HeroSection />
       <FeaturedCoursesSection coursesData={courses} />
+      <BlogSection blogData={blogs} />
     </>
   );
 };
