@@ -1,3 +1,4 @@
+import MainFooter from '@/components/layout/main-footer';
 import MainHeader from '@/components/layout/main-header';
 import React from 'react';
 
@@ -12,6 +13,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       <MainHeader />
       <main className="flex-1">{children}</main>
       {/* Main Footer */}
+      <MainFooter />
     </div>
   );
 };

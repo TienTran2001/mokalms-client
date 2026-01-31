@@ -1,0 +1,648 @@
+---
+alwaysApply: true
+---
+
+# Project Rules & Conventions - Mokalms UI
+
+## 1. General Principles
+
+- **Tech Stack**: Next.js 15 App Router, React 19, TypeScript, Tailwind CSS, Shadcn UI, TanStack Query, React Hook Form, Yup, Zustand
+- **Functional Programming**: Use functional components and declarative patterns; avoid classes except for API services
+- **Modular Code**: Prefer iteration and modularization over code duplication
+- **Strict Typing**: All code must be TypeScript with strict types
+- **DRY Principle**: Centralize reusable logic in hooks, utils, and services
+
+---
+
+## 2. Folder & File Structure Rules
+
+### App Directory Structure
+
+```
+src/app/
+├── (protected)/          # Authenticated user routes
+├── (public)/             # Public-facing routes (landing, courses, blogs)
+├── admin/                # Admin dashboard routes
+│   └── [feature]/
+│       ├── components/   # Page-specific components
+│       └── page.tsx
+├── auth/                 # Authentication routes (sign-in, sign-up, etc.)
+├── api/                  # API routes (Next.js route handlers)
+├── error.tsx             # Global error boundary
+├── not-found.tsx         # 404 page
+├── layout.tsx            # Root layout
+└── globals.css           # Global styles
+```
+
+### Source Directory Structure
+
+```
+src/
+├── components/
+│   ├── ui/               # Shadcn UI base components (button.tsx, dialog.tsx)
+│   ├── admin/            # Admin-specific shared components
+│   ├── auth/             # Auth components (protected-route.tsx, auth-guard.tsx)
+│   ├── table/            # Reusable data table components
+│   ├── layout/           # Layout components (main-header.tsx, admin-layout.tsx)
+│   ├── providers/        # Context providers (query-provider.tsx)
+│   └── [feature]/        # Feature-specific components (chatbot/, blog/, course/)
+├── configs/              # Configuration files (permission.ts, routes.ts, seo.ts)
+├── constants/            # App constants (table.ts, pagination.ts, filters.ts)
+├── hooks/                # Custom React hooks (use-courses.ts, use-debounce.ts)
+├── lib/                  # Core utilities (api-client.ts, api-service.ts, utils.ts)
+├── services/             # API service classes (courses.ts, users.ts)
+├── stores/               # Zustand stores (auth-store.ts)
+├── types/                # TypeScript type definitions (course.ts, user.ts)
+├── utils/                # Utility functions (format.ts, common.ts)
+└── validators/           # Yup validation schemas (course.validator.ts)
+```
+
+### File Naming Conventions
+
+| Category   | Convention              | Example                                 |
+| ---------- | ----------------------- | --------------------------------------- |
+| Components | `kebab-case.tsx`        | `courses-table.tsx`, `admin-header.tsx` |
+| Hooks      | `use-[name].ts`         | `use-courses.ts`, `use-debounce.ts`     |
+| Services   | `[entity].ts`           | `courses.ts`, `users.ts`                |
+| Types      | `[entity].ts`           | `course.ts`, `user.ts`                  |
+| Validators | `[entity].validator.ts` | `course.validator.ts`                   |
+| Constants  | `[category].ts`         | `table.ts`, `pagination.ts`             |
+| Configs    | `[name].ts`             | `permission.ts`, `seo.ts`               |
+| Stores     | `[name]-store.ts`       | `auth-store.ts`                         |
+
+---
+
+## 3. Coding Rules (Do / Don't)
+
+### DO ✅
+
+```typescript
+// DO: Use interfaces over types
+interface ICourse {
+  _id: string;
+  title: string;
+  slug: string;
+}
+
+// DO: Use enum for fixed values
+export enum CourseStatus {
+  DRAFT = "draft",
+  PUBLISHED = "published",
+}
+
+// DO: Prefix interface with 'I' for entities
+interface IUser { ... }
+interface ICategory { ... }
+
+// DO: Use descriptive variable names with auxiliary verbs
+const isLoading = true;
+const hasError = false;
+const canEdit = userPermissions.includes('course:update');
+
+// DO: Use named exports for components
+export function CoursesTable() { ... }
+
+// DO: Use 'function' keyword for pure utility functions
+export function formatPrice(price: number): string {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(price);
+}
+
+// DO: Use const arrow function for components
+const CoursesPage = () => { ... };
+export default CoursesPage;
+
+// DO: Define endpoints as const objects
+const ENDPOINTS = {
+  COURSES: "/courses",
+  COURSE: (id: string) => `/courses/${id}`,
+} as const;
+
+// DO: Use useCallback for memoized handlers
+const handleSearchChange = useCallback((search: string) => {
+  setFilters((prev) => ({...prev, search}));
+}, []);
+
+// DO: Use useMemo for computed values
+const queryParams = useMemo(() => ({
+  page: currentPage,
+  limit: pageSize,
+  search: debouncedSearch,
+}), [currentPage, pageSize, debouncedSearch]);
+```
+
+### DON'T ❌
+
+```typescript
+// DON'T: Use type instead of interface for objects
+type Course = { ... }  // ❌ Use interface instead
+
+// DON'T: Use implicit any
+function getData(params) { ... }  // ❌ Type params explicitly
+
+// DON'T: Mix naming conventions
+const CourseTable = ...     // ❌ File should be course-table.tsx
+const usecourses = ...      // ❌ Should be useCourses
+
+// DON'T: Hardcode API endpoints in components
+const data = await apiClient.get('/courses');  // ❌ Use service layer
+
+// DON'T: Use inline handlers in render (when expensive)
+<Button onClick={() => heavyComputation()}>  // ❌ Use useCallback
+
+// DON'T: Define types inline in components (for complex types)
+const Component = ({ data }: { data: { id: string; name: string } }) => ...
+// ❌ Define interface separately
+```
+
+---
+
+## 4. Architecture & Data Flow
+
+### Data Flow Pattern
+
+```
+Component → Hook (useCourses) → Service (CoursesService) → ApiService → API
+                ↓
+         TanStack Query (caching)
+                ↓
+         Component (re-render)
+```
+
+### Service Layer Pattern
+
+```typescript
+// src/services/courses.ts
+import { ApiService } from "@/lib/api-service";
+import type { ICourse, CreateCourseRequest, CoursesListResponse } from "@/types/course";
+
+const ENDPOINTS = {
+  COURSES: "/courses",
+  COURSE: (id: string) => `/courses/${id}`,
+} as const;
+
+export class CoursesService {
+  static async getCourses(params?: CoursesListParams): Promise<CoursesListResponse> {
+    try {
+      return await ApiService.get<CoursesListResponse>(ENDPOINTS.COURSES, params);
+    } catch {
+      return { courses: [], pagination: { ... } };
+    }
+  }
+
+  static async getCourse(id: string): Promise<ICourse> {
+    return ApiService.get<ICourse>(ENDPOINTS.COURSE(id));
+  }
+
+  static async createCourse(data: CreateCourseRequest): Promise<ICourse> {
+    return ApiService.post<ICourse, CreateCourseRequest>(ENDPOINTS.COURSES, data);
+  }
+}
+```
+
+### Hook Layer Pattern
+
+```typescript
+// src/hooks/use-courses.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import CoursesService from '@/services/courses';
+import { toast } from 'sonner';
+
+// Query keys factory
+export const courseKeys = {
+  all: ['courses'] as const,
+  lists: () => [...courseKeys.all, 'list'] as const,
+  list: (filters: CoursesListParams) =>
+    [...courseKeys.lists(), filters] as const,
+  details: () => [...courseKeys.all, 'detail'] as const,
+  detail: (id: string) => [...courseKeys.details(), id] as const,
+};
+
+// Query hook
+export function useCourses(params?: CoursesListParams) {
+  return useQuery({
+    queryKey: courseKeys.list(params || {}),
+    queryFn: () => CoursesService.getCourses(params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+// Mutation hook
+export function useCreateCourse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateCourseRequest) =>
+      CoursesService.createCourse(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: courseKeys.lists() });
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to create course');
+    },
+  });
+}
+```
+
+---
+
+## 5. API & Backend Interaction
+
+### ApiService Pattern
+
+```typescript
+// src/lib/api-service.ts
+export class ApiService {
+  static async get<T>(
+    url: string,
+    params?: Record<string, unknown>
+  ): Promise<T> {
+    try {
+      const response = await apiClient.get(url, { params });
+      return response.data.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  static async post<T, D = unknown>(url: string, data?: D): Promise<T> {
+    try {
+      const response = await apiClient.post(url, data);
+      return response.data.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  private static handleError(error: unknown): ApiError {
+    const axiosError = error as AxiosError<ApiErrorResponse>;
+    return {
+      message: axiosError.response?.data?.message || 'An error occurred',
+      errors: axiosError.response?.data?.errors,
+      code: axiosError.response?.data?.code,
+    };
+  }
+}
+```
+
+### API Response Types
+
+```typescript
+// Standard API response wrapper
+export interface ApiResponse<T = unknown> {
+  data: T;
+  message?: string;
+  success: boolean;
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+    totalPages?: number;
+  };
+}
+
+// Error response type
+export interface ApiError {
+  message: string;
+  errors?: Record<string, string[]>;
+  code?: string;
+}
+```
+
+---
+
+## 6. State Management Patterns
+
+### Global State (Zustand)
+
+```typescript
+// src/stores/auth-store.ts
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+
+interface AuthState {
+  user: AuthUser | null;
+  isLoading: boolean;
+  logout: () => Promise<void>;
+  getCurrentUser: () => Promise<void>;
+  setUser: (user: AuthUser | null) => void;
+  canPerformAction: (resource: string, action: string) => boolean;
+}
+
+export const useAuthStore = create<AuthState>()(
+  devtools(
+    (set, get) => ({
+      user: null,
+      isLoading: true,
+      // ... actions
+    }),
+    { name: 'auth-store' }
+  )
+);
+
+// Selectors for performance
+export const useUser = () => useAuthStore((state) => state.user);
+export const useIsAuthenticated = () => useAuthStore((state) => !!state.user);
+```
+
+### Server State (TanStack Query)
+
+- Use query keys factory pattern
+- Use `placeholderData: keepPreviousData` for pagination
+- Invalidate queries on mutations
+- Use `enabled` option for conditional fetching
+
+### Local Component State
+
+- Use `useState` for simple UI state
+- Use `useImmer` for complex nested state (e.g., course info arrays)
+- Group related state with interface
+
+```typescript
+interface FilterState {
+  search: string;
+  status: string[];
+  type: string[];
+}
+
+const [filters, setFilters] = useState<FilterState>({
+  search: '',
+  status: [],
+  type: [],
+});
+```
+
+---
+
+## 7. Error Handling Strategy
+
+### Service Layer
+
+```typescript
+// Catch and return fallback for list queries
+static async getCourses(params?: CoursesListParams): Promise<CoursesListResponse> {
+  try {
+    return await ApiService.get<CoursesListResponse>(ENDPOINTS.COURSES, params);
+  } catch {
+    return { courses: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
+  }
+}
+
+// Throw for single item queries (let hook handle)
+static async getCourse(id: string): Promise<ICourse> {
+  return ApiService.get<ICourse>(ENDPOINTS.COURSE(id));
+}
+```
+
+### Hook Layer
+
+```typescript
+// Use toast for user feedback
+onError: (error) => {
+  toast.error(error?.message || "Failed to create course");
+},
+
+onSuccess: () => {
+  toast.success("Course created successfully!");
+},
+```
+
+### Component Layer
+
+- Use loading states: `isLoading`, `isPending`
+- Use skeleton components during loading
+- Show user-friendly error messages via toast
+
+---
+
+## 8. Validation & Security Practices
+
+### Form Validation (Yup)
+
+```typescript
+// src/validators/course.validator.ts
+import * as yup from 'yup';
+
+const courseFormSchema = yup.object({
+  title: yup
+    .string()
+    .required('Title is required')
+    .min(3, 'Title must be at least 3 characters')
+    .max(100, 'Title must be less than 100 characters'),
+
+  slug: yup
+    .string()
+    .required('Slug is required')
+    .matches(
+      /^[a-z0-9-]+$/,
+      'Slug must contain only lowercase letters, numbers, and hyphens'
+    ),
+
+  price: yup
+    .number()
+    .transform((value) => (isNaN(value) ? 0 : value))
+    .default(0)
+    .test(
+      'required-when-not-free',
+      'Price is required for paid courses',
+      function (value) {
+        const { isFree } = this.parent;
+        return isFree || (value && value > 0);
+      }
+    ),
+});
+
+export type CourseSchema = yup.InferType<typeof courseFormSchema>;
+export { courseFormSchema };
+```
+
+### RBAC (Role-Based Access Control)
+
+```typescript
+// src/configs/permission.ts
+export const PERMISSIONS = {
+  COURSE_CREATE: 'course:create',
+  COURSE_READ: 'course:read',
+  COURSE_UPDATE: 'course:update',
+  COURSE_DELETE: 'course:delete',
+} as const;
+
+export const RESOURCES = {
+  USER: 'user',
+  COURSE: 'course',
+  // ...
+} as const;
+
+export const OPERATIONS = {
+  CREATE: 'create',
+  READ: 'read',
+  UPDATE: 'update',
+  DELETE: 'delete',
+} as const;
+```
+
+### Permission Hooks
+
+```typescript
+// Usage in components
+const { CREATE, READ, UPDATE, DELETE } = usePermissions(RESOURCES.COURSE, [
+  OPERATIONS.CREATE,
+  OPERATIONS.READ,
+  OPERATIONS.UPDATE,
+  OPERATIONS.DELETE,
+]);
+
+if (CREATE) {
+  // Show create button
+}
+```
+
+### Protected Routes
+
+```typescript
+<ProtectedRoute resource={RESOURCES.COURSE} action={OPERATIONS.READ}>
+  <CoursesTable />
+</ProtectedRoute>
+
+<AdminProtectedRoute>
+  <AdminLayout>{children}</AdminLayout>
+</AdminProtectedRoute>
+```
+
+---
+
+## 9. Reusable Components & Shared Utilities
+
+### Table Components
+
+- `DataTable` - Generic table wrapper using TanStack Table
+- `DataTablePagination` - Server-side pagination component
+- `DataTableToolbar` - Search, filters, bulk actions (page-specific)
+- `DataTableSkeleton` - Loading state
+
+### UI Components
+
+- All Shadcn UI components in `src/components/ui/`
+- `ImageUpload` - File upload with preview
+- `PasswordInput` - Password field with toggle
+- `MultiSelect` - Multi-select dropdown
+- `Loader` - Loading spinner
+
+### Utility Functions
+
+```typescript
+// src/lib/utils.ts
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// src/utils/format.ts
+export function formatPrice(price: number): string { ... }
+export function formatDate(date: Date | string): string { ... }
+export function formatDuration(seconds: number): string { ... }
+
+// src/utils/common.ts
+export function getPageNumbers(currentPage: number, totalPages: number): (number | string)[] { ... }
+export function getStatusConfig(status: string): StatusConfig { ... }
+```
+
+### Constants
+
+```typescript
+// src/constants/table.ts
+export const TABLE_CONSTANTS = {
+  DEFAULT_SORT_BY: 'createdAt',
+  DEFAULT_SORT_ORDER: 'desc' as const,
+  SEARCH_DEBOUNCE_MS: 500,
+  ENABLE_ROW_SELECTION: true,
+};
+
+// src/constants/pagination.ts
+export const PAGINATION_CONSTANTS = {
+  DEFAULT_PAGE_SIZE: 10,
+  PAGE_SIZE_OPTIONS: [5, 10, 20, 50],
+  DEFAULT_PAGE: 1,
+};
+```
+
+---
+
+## 10. Testing Conventions
+
+> Note: No test files detected in current codebase. If tests are added, follow these patterns:
+
+- Place tests in `__tests__/` folder or alongside components with `.test.tsx` suffix
+- Use React Testing Library for component tests
+- Test hooks with `@testing-library/react-hooks`
+- Mock API calls with MSW or manual mocks
+
+---
+
+## 11. Common Anti-Patterns Found
+
+### Inconsistent Error Handling
+
+- Some services return fallback on error, others throw
+- **Pattern**: Use try-catch with fallback for list queries, throw for single items
+
+### Duplicate Code in Tables
+
+- Each admin table has similar structure (toolbar, columns, dialogs)
+- **Pattern**: Page-specific components are intentional for flexibility
+
+### Mixed Component Export Styles
+
+- Some use `export default`, others use named exports
+- **Pattern**: Use `export default` for pages, named exports for reusable components
+
+---
+
+## 12. What NOT to Do in This Project
+
+1. **DO NOT** use `fetch` directly - always use `ApiService` or service classes
+2. **DO NOT** define API endpoints inline in components - use service layer
+3. **DO NOT** use `type` for object shapes - use `interface`
+4. **DO NOT** create new Zustand stores for server data - use TanStack Query
+5. **DO NOT** skip TypeScript types - all parameters and returns must be typed
+6. **DO NOT** use inline styles - use Tailwind CSS classes
+7. **DO NOT** bypass permission checks - always wrap with `ProtectedRoute`
+8. **DO NOT** hardcode strings for permissions - use `PERMISSIONS` constants
+9. **DO NOT** use React context for global state - use Zustand
+10. **DO NOT** mutate state directly - use `setFilters`, `useImmer`, or Zustand actions
+11. **DO NOT** skip loading/error states - always handle both
+12. **DO NOT** use class components - use functional components with hooks
+13. **DO NOT** create new UI primitives - use/extend Shadcn UI components
+14. **DO NOT** put business logic in components - extract to hooks or services
+
+---
+
+## 13. Recommendations (Only if Clearly Needed)
+
+> Based on current patterns, no major recommendations. The codebase follows consistent conventions.
+
+### Minor Observations
+
+1. **Validation schemas** could have inline error messages centralized in a constants file for i18n support
+2. **Query client** configuration is minimal - consider adding error boundary integration if needed
+3. **Service error handling** is inconsistent - standardize whether to throw or return fallback
+
+---
+
+## Quick Reference
+
+| Need                 | Location                                                  |
+| -------------------- | --------------------------------------------------------- |
+| Add new admin page   | `src/app/admin/[feature]/page.tsx` + `components/` folder |
+| Add new hook         | `src/hooks/use-[name].ts`                                 |
+| Add new service      | `src/services/[entity].ts`                                |
+| Add new type         | `src/types/[entity].ts`                                   |
+| Add validation       | `src/validators/[entity].validator.ts`                    |
+| Add constant         | `src/constants/[category].ts` + re-export in `index.ts`   |
+| Add UI component     | `src/components/ui/[name].tsx` (Shadcn style)             |
+| Add shared component | `src/components/[feature]/[name].tsx`                     |
+| Add permission       | `src/configs/permission.ts`                               |
